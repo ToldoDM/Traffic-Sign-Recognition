@@ -209,8 +209,17 @@ class DataAugmenter:
                                          'iteration': index}
                 self.augmented_images.append((transformed['image'], dict(metadata)))
 
+    def save_augmented_images(self):
+        folder_path = os.path.join(self.dataset_path, 'augmented')
+        for augmented_image, metadata in tqdm(self.augmented_images, desc='Saving augmented images'):
+            folder_class_path = os.path.join(folder_path, metadata['class'])
+            file_path = os.path.join(folder_class_path,
+                                     metadata['filename'] + '_' + metadata['transform']['type'] + '_' +
+                                     str(metadata['transform']['iteration']) + '.ppm')
+            os.makedirs(os.path.dirname(file_path), exist_ok=True)
+            cv2.imwrite(file_path, augmented_image)
+
 
 da = DataAugmenter("dataset/GTSRB/training")
 da.load_images()
 da.augment_images()
-
