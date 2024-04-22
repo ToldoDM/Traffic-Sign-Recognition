@@ -5,6 +5,23 @@ from tqdm import tqdm
 import albumentations as A
 
 
+def save_as_ppm(file_path, image):
+    # Ensure the image is in uint8 format
+    image = np.uint8(image)
+
+    # Extract image dimensions
+    height, width, channels = image.shape
+
+    # Open the file for writing
+    with open(file_path, 'wb') as f:
+        # Write the PPM header
+        header = "P6\n{} {}\n255\n".format(width, height)
+        f.write(header.encode())
+
+        # Write the image data
+        f.write(image.tobytes())
+
+
 class DataAugmenter:
     """
     A class for loading and augmenting dataset images stored in a specific nested directory structure.
@@ -38,9 +55,11 @@ class DataAugmenter:
                 file_path = os.path.join(class_folder_path, filename)
                 if filename.endswith('.ppm'):  # Filter by image file extensions
                     img = cv2.imread(file_path)
-                    if img is not None:
+                    # OpenCV reads images in BGR format, convert it to RGB
+                    img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+                    if img_rgb is not None:
                         self.dataset_images.append(
-                            [img,
+                            [img_rgb,
                              {'class': class_folder,
                               'filename': os.path.splitext(filename)[0]}
                              ])
@@ -216,7 +235,7 @@ class DataAugmenter:
                                  augmented_metadata['filename'] + '_' + augmented_metadata['transform']['type'] + '_' +
                                  str(augmented_metadata['transform']['iteration']) + '.ppm')
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
-        cv2.imwrite(file_path, augmented_image)
+        save_as_ppm(file_path, augmented_image)
 
 
 da = DataAugmenter("dataset/GTSRB/training")
