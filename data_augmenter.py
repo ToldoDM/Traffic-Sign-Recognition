@@ -86,7 +86,7 @@ class DataAugmenter:
                             self._save_augmented_image(transformed['image'], dict(metadata))
 
             # Spatter effect
-            spatter_modes = ['rain', 'rain', 'mud', 'mud']
+            spatter_modes = ['rain', 'rain', 'mud', 'mud', 'mud', 'mud']
             for index, spatter_mode in enumerate(spatter_modes):
                 transform_image = A.Compose([
                     A.Spatter(p=1.0, mode=spatter_mode)
