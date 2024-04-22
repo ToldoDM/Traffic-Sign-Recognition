@@ -23,7 +23,6 @@ class DataAugmenter:
                                 'dataset/GTSRB/training'.
         """
         self.dataset_images = []
-        self.augmented_images = []
         self.dataset_path = dataset_path
 
     def load_images(self):
@@ -47,6 +46,7 @@ class DataAugmenter:
                              ])
                     else:
                         print(f"Failed to load image: {file_path}")
+        self.dataset_images.sort(key=lambda x: (x[1]['class'], x[1]['filename']))
 
     def augment_images(self):
         for sign_image, metadata in tqdm(self.dataset_images, desc='Augmenting images'):
@@ -83,7 +83,7 @@ class DataAugmenter:
                                      (len(rain_types) * len(blur_values) * i2) +
                                      (len(rain_types) * i3) +
                                      i4)}
-                            self.augmented_images.append([transformed['image'], dict(metadata)])
+                            self._save_augmented_image(transformed['image'], dict(metadata))
 
             # Spatter effect
             spatter_modes = ['rain', 'rain', 'mud', 'mud']
@@ -94,7 +94,7 @@ class DataAugmenter:
                 transformed = transform_image(image=sign_image)
                 metadata['transform'] = {'type': 'spatter',
                                          'iteration': index}
-                self.augmented_images.append((transformed['image'], dict(metadata)))
+                self._save_augmented_image(transformed['image'], dict(metadata))
 
             # Zoom Blur
             transform_image = A.Compose([
@@ -103,7 +103,7 @@ class DataAugmenter:
             transformed = transform_image(image=sign_image)
             metadata['transform'] = {'type': 'zoom_blur',
                                      'iteration': 0}
-            self.augmented_images.append((transformed['image'], dict(metadata)))
+            self._save_augmented_image(transformed['image'], dict(metadata))
 
             # Random sun flare
             srcs_radius = [30, 30, 40, 40, 50, 50, 60, 60]
@@ -118,7 +118,7 @@ class DataAugmenter:
                 transformed = transform_image(image=resized_image)
                 metadata['transform'] = {'type': 'sun_flare',
                                          'iteration': index}
-                self.augmented_images.append((transformed['image'], dict(metadata)))
+                self._save_augmented_image(transformed['image'], dict(metadata))
 
             # Ringing overshoot
             blur_limits = [5, 7, 9, 11, 13, 15, 17, 19]
@@ -131,7 +131,7 @@ class DataAugmenter:
                 transformed = transform_image(image=resized_image)
                 metadata['transform'] = {'type': 'ringing_overshoot',
                                          'iteration': index}
-                self.augmented_images.append((transformed['image'], dict(metadata)))
+                self._save_augmented_image(transformed['image'], dict(metadata))
 
             # Perspective
             for index in range(4):
@@ -143,7 +143,7 @@ class DataAugmenter:
                 transformed = transform_image(image=sign_image)
                 metadata['transform'] = {'type': 'perspective',
                                          'iteration': index}
-                self.augmented_images.append((transformed['image'], dict(metadata)))
+                self._save_augmented_image(transformed['image'], dict(metadata))
 
             # Motion blur
             blur_limits = [15, 21, 25, 31, 15, 21, 25, 31]
@@ -156,7 +156,7 @@ class DataAugmenter:
                 transformed = transform_image(image=resized_image)
                 metadata['transform'] = {'type': 'motion_blur',
                                          'iteration': index}
-                self.augmented_images.append((transformed['image'], dict(metadata)))
+                self._save_augmented_image(transformed['image'], dict(metadata))
 
             # Fog
             gray_values = [240, 200, 150, 110]
@@ -174,7 +174,7 @@ class DataAugmenter:
                 transformed = transform_image(image=resized_image)
                 metadata['transform'] = {'type': 'fog',
                                          'iteration': index}
-                self.augmented_images.append((transformed['image'], dict(metadata)))
+                self._save_augmented_image(transformed['image'], dict(metadata))
 
             # Noise
             noise_values = [0.5, 1, 1.5, 2]
@@ -185,7 +185,7 @@ class DataAugmenter:
                 transformed = transform_image(image=sign_image)
                 metadata['transform'] = {'type': 'ISO_noise',
                                          'iteration': index}
-                self.augmented_images.append((transformed['image'], dict(metadata)))
+                self._save_augmented_image(transformed['image'], dict(metadata))
 
             # Gamma values
             gamma_values = [10, 25, 40, 60, 160, 250, 350, 510]
@@ -196,7 +196,7 @@ class DataAugmenter:
                 transformed = transform_image(image=sign_image)
                 metadata['transform'] = {'type': 'gamma',
                                          'iteration': index}
-                self.augmented_images.append((transformed['image'], dict(metadata)))
+                self._save_augmented_image(transformed['image'], dict(metadata))
 
             # Shadow
             for index in range(4):
@@ -207,20 +207,18 @@ class DataAugmenter:
                 transformed = transform_image(image=sign_image)
                 metadata['transform'] = {'type': 'shadow',
                                          'iteration': index}
-                self.augmented_images.append((transformed['image'], dict(metadata)))
+                self._save_augmented_image(transformed['image'], dict(metadata))
 
-    def save_augmented_images(self):
+    def _save_augmented_image(self, augmented_image, augmented_metadata):
         folder_path = os.path.join(self.dataset_path, 'augmented')
-        for augmented_image, metadata in tqdm(self.augmented_images, desc='Saving augmented images'):
-            folder_class_path = os.path.join(folder_path, metadata['class'])
-            file_path = os.path.join(folder_class_path,
-                                     metadata['filename'] + '_' + metadata['transform']['type'] + '_' +
-                                     str(metadata['transform']['iteration']) + '.ppm')
-            os.makedirs(os.path.dirname(file_path), exist_ok=True)
-            cv2.imwrite(file_path, augmented_image)
+        folder_class_path = os.path.join(folder_path, augmented_metadata['class'])
+        file_path = os.path.join(folder_class_path,
+                                 augmented_metadata['filename'] + '_' + augmented_metadata['transform']['type'] + '_' +
+                                 str(augmented_metadata['transform']['iteration']) + '.ppm')
+        os.makedirs(os.path.dirname(file_path), exist_ok=True)
+        cv2.imwrite(file_path, augmented_image)
 
 
 da = DataAugmenter("dataset/GTSRB/training")
 da.load_images()
 da.augment_images()
-da.save_augmented_images()
