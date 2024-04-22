@@ -50,6 +50,7 @@ class DataAugmenter:
 
     def augment_images(self):
         for sign_image, metadata in tqdm(self.dataset_images, desc='Augmenting images'):
+            metadata = dict(metadata)
             # Upscale image for future use
             transform_image = A.Compose([
                 A.SmallestMaxSize(p=1.0, max_size=128, interpolation=1)
@@ -82,7 +83,7 @@ class DataAugmenter:
                                      (len(rain_types) * len(blur_values) * i2) +
                                      (len(rain_types) * i3) +
                                      i4)}
-                            self.augmented_images.append([transformed['image'], metadata])
+                            self.augmented_images.append([transformed['image'], dict(metadata)])
 
             # Spatter effect
             spatter_modes = ['rain', 'rain', 'mud', 'mud']
@@ -93,7 +94,7 @@ class DataAugmenter:
                 transformed = transform_image(image=sign_image)
                 metadata['transform'] = {'type': 'spatter',
                                          'iteration': index}
-                self.augmented_images.append((transformed['image'], metadata))
+                self.augmented_images.append((transformed['image'], dict(metadata)))
 
             # Zoom Blur
             transform_image = A.Compose([
@@ -102,7 +103,7 @@ class DataAugmenter:
             transformed = transform_image(image=sign_image)
             metadata['transform'] = {'type': 'zoom_blur',
                                      'iteration': 0}
-            self.augmented_images.append((transformed['image'], metadata))
+            self.augmented_images.append((transformed['image'], dict(metadata)))
 
             # Random sun flare
             srcs_radius = [30, 30, 40, 40, 50, 50, 60, 60]
@@ -117,7 +118,7 @@ class DataAugmenter:
                 transformed = transform_image(image=resized_image)
                 metadata['transform'] = {'type': 'sun_flare',
                                          'iteration': index}
-                self.augmented_images.append((transformed['image'], metadata))
+                self.augmented_images.append((transformed['image'], dict(metadata)))
 
             # Ringing overshoot
             blur_limits = [5, 7, 9, 11, 13, 15, 17, 19]
@@ -130,7 +131,7 @@ class DataAugmenter:
                 transformed = transform_image(image=resized_image)
                 metadata['transform'] = {'type': 'ringing_overshoot',
                                          'iteration': index}
-                self.augmented_images.append((transformed['image'], metadata))
+                self.augmented_images.append((transformed['image'], dict(metadata)))
 
             # Perspective
             for index in range(4):
@@ -142,7 +143,7 @@ class DataAugmenter:
                 transformed = transform_image(image=sign_image)
                 metadata['transform'] = {'type': 'perspective',
                                          'iteration': index}
-                self.augmented_images.append((transformed['image'], metadata))
+                self.augmented_images.append((transformed['image'], dict(metadata)))
 
             # Motion blur
             blur_limits = [15, 21, 25, 31, 15, 21, 25, 31]
@@ -155,7 +156,7 @@ class DataAugmenter:
                 transformed = transform_image(image=resized_image)
                 metadata['transform'] = {'type': 'motion_blur',
                                          'iteration': index}
-                self.augmented_images.append((transformed['image'], metadata))
+                self.augmented_images.append((transformed['image'], dict(metadata)))
 
             # Fog
             gray_values = [240, 200, 150, 110]
@@ -173,7 +174,7 @@ class DataAugmenter:
                 transformed = transform_image(image=resized_image)
                 metadata['transform'] = {'type': 'fog',
                                          'iteration': index}
-                self.augmented_images.append((transformed['image'], metadata))
+                self.augmented_images.append((transformed['image'], dict(metadata)))
 
             # Noise
             noise_values = [0.5, 1, 1.5, 2]
@@ -184,7 +185,7 @@ class DataAugmenter:
                 transformed = transform_image(image=sign_image)
                 metadata['transform'] = {'type': 'ISO_noise',
                                          'iteration': index}
-                self.augmented_images.append((transformed['image'], metadata))
+                self.augmented_images.append((transformed['image'], dict(metadata)))
 
             # Gamma values
             gamma_values = [10, 25, 40, 60, 160, 250, 350, 510]
@@ -195,7 +196,7 @@ class DataAugmenter:
                 transformed = transform_image(image=sign_image)
                 metadata['transform'] = {'type': 'gamma',
                                          'iteration': index}
-                self.augmented_images.append((transformed['image'], metadata))
+                self.augmented_images.append((transformed['image'], dict(metadata)))
 
             # Shadow
             for index in range(4):
@@ -206,7 +207,7 @@ class DataAugmenter:
                 transformed = transform_image(image=sign_image)
                 metadata['transform'] = {'type': 'shadow',
                                          'iteration': index}
-                self.augmented_images.append((transformed['image'], metadata))
+                self.augmented_images.append((transformed['image'], dict(metadata)))
 
 
 da = DataAugmenter("dataset/GTSRB/training")
