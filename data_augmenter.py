@@ -223,3 +223,4 @@ class DataAugmenter:
 da = DataAugmenter("dataset/GTSRB/training")
 da.load_images()
 da.augment_images()
+da.save_augmented_images()
