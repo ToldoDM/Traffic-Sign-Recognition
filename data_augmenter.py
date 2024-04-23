@@ -75,6 +75,8 @@ class DataAugmenter:
                 A.SmallestMaxSize(p=1.0, max_size=128, interpolation=1)
             ])
             resized_image = transform_image(image=sign_image)['image']
+            sign_img_height = np.shape(sign_image)[0]
+            sign_img_width = np.shape(sign_image)[1]
 
             # Apply rain effect
             # List of parameters
@@ -90,9 +92,7 @@ class DataAugmenter:
                                 A.RandomRain(brightness_coefficient=brightness_coefficient,
                                              drop_width=drop_width, blur_value=blur_value,
                                              p=1, rain_type=rain_type),
-                                A.SmallestMaxSize(p=1.0,
-                                                  max_size=np.max([np.shape(sign_image)[0], np.shape(sign_image)[1]]),
-                                                  interpolation=1)
+                                A.Resize(p=1.0, height=sign_img_width, width=sign_img_width, interpolation=1)
                             ])
                             transformed = transform_image(image=resized_image)
                             metadata['transform'] = {
@@ -131,8 +131,7 @@ class DataAugmenter:
                     A.RandomSunFlare(p=1.0, flare_roi=(0.3, 0.3, 0.7, 0.7), angle_lower=0, angle_upper=1,
                                      num_flare_circles_lower=6,
                                      num_flare_circles_upper=10, src_radius=src_radius, src_color=(255, 255, 255)),
-                    A.SmallestMaxSize(p=1.0, max_size=np.max([np.shape(sign_image)[0], np.shape(sign_image)[1]]),
-                                      interpolation=1)
+                    A.Resize(p=1.0, height=sign_img_width, width=sign_img_width, interpolation=1)
                 ])
                 transformed = transform_image(image=resized_image)
                 metadata['transform'] = {'type': 'sun_flare',
@@ -144,8 +143,7 @@ class DataAugmenter:
             for index, blur_limit in enumerate(blur_limits):
                 transform_image = A.Compose([
                     A.RingingOvershoot(p=1.0, blur_limit=(blur_limit, blur_limit), cutoff=(0.1, 0.2)),
-                    A.SmallestMaxSize(p=1.0, max_size=np.max([np.shape(sign_image)[0], np.shape(sign_image)[1]]),
-                                      interpolation=1)
+                    A.Resize(p=1.0, height=sign_img_width, width=sign_img_width, interpolation=1)
                 ])
                 transformed = transform_image(image=resized_image)
                 metadata['transform'] = {'type': 'ringing_overshoot',
@@ -169,8 +167,7 @@ class DataAugmenter:
             for index, blur_limit in enumerate(blur_limits):
                 transform_image = A.Compose([
                     A.MotionBlur(p=1, blur_limit=(blur_limit, blur_limit), allow_shifted=False),
-                    A.SmallestMaxSize(p=1.0, max_size=np.max([np.shape(sign_image)[0], np.shape(sign_image)[1]]),
-                                      interpolation=1)
+                    A.Resize(p=1.0, height=sign_img_width, width=sign_img_width, interpolation=1)
                 ])
                 transformed = transform_image(image=resized_image)
                 metadata['transform'] = {'type': 'motion_blur',
@@ -187,8 +184,7 @@ class DataAugmenter:
                     A.GaussianBlur(blur_limits=(2, 15), p=1),
                     A.TemplateTransform(p=1, templates=gray_image),
                     A.ISONoise(intensity=(0.2, 0.5), p=1),
-                    A.SmallestMaxSize(p=1.0, max_size=np.max([np.shape(sign_image)[0], np.shape(sign_image)[1]]),
-                                      interpolation=1)
+                    A.Resize(p=1.0, height=sign_img_width, width=sign_img_width, interpolation=1)
                 ])
                 transformed = transform_image(image=resized_image)
                 metadata['transform'] = {'type': 'fog',
