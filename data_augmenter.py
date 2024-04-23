@@ -78,10 +78,10 @@ class DataAugmenter:
 
             # Apply rain effect
             # List of parameters
-            brightness_coefficients = [1, 0.7, 0.5, 0.4, 0.3]
+            brightness_coefficients = [0.7, 0.5, 0.4, 0.3]
             drop_width_values = [1, 2]
-            blur_values = [5, 7, 9, 10]
-            rain_types = [None, 'drizzle', 'heavy', 'torrential']
+            blur_values = [5, 7, 10]
+            rain_types = ['drizzle', 'heavy', 'torrential']
             for i1, brightness_coefficient in enumerate(brightness_coefficients):
                 for i2, drop_width in enumerate(drop_width_values):
                     for i3, blur_value in enumerate(blur_values):
