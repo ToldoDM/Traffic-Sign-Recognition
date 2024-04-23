@@ -227,7 +227,8 @@ class DataAugmenter:
     def _save_augmented_image(self, augmented_image, augmented_metadata):
         folder_path = os.path.join(self.dataset_path, 'augmented')
         folder_class_path = os.path.join(folder_path, augmented_metadata['class'])
-        file_path = os.path.join(folder_class_path,
+        class_type_path = os.path.join(folder_class_path, augmented_metadata['transform']['type'])
+        file_path = os.path.join(class_type_path,
                                  augmented_metadata['filename'] + '_' + augmented_metadata['transform']['type'] + '_' +
                                  str(augmented_metadata['transform']['iteration']) + '.ppm')
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
