@@ -27,7 +27,7 @@ class DataAugmenter:
     A class for loading and augmenting dataset images stored in a specific nested directory structure.
 
     This class expects the dataset directory to follow a specific format:
-    dataset/GTSRB/training/original/$class_num$
+    dataset/GTSRB/train/original/$class_num$
     where "$class_num$" represents different class directories containing images.
     """
 
@@ -37,7 +37,7 @@ class DataAugmenter:
 
         Args:
             dataset_path (str): The root path where the dataset is stored, expected to be in the format
-                                'dataset/GTSRB/training'.
+                                'dataset/GTSRB/train'.
         """
         self.dataset_images = []
         self.dataset_path = dataset_path
@@ -68,7 +68,8 @@ class DataAugmenter:
         self.dataset_images.sort(key=lambda x: (x[1]['class'], x[1]['filename']))
 
     def augment_images(self):
-        for sign_image, metadata in tqdm(self.dataset_images, desc='Augmenting images'):
+        for sign_image, metadata in tqdm(self.dataset_images[0:200], desc='Augmenting images'):
+        #for sign_image, metadata in tqdm(self.dataset_images, desc='Augmenting images'):
             metadata = dict(metadata)
             # Upscale image for future use
             transform_image = A.Compose([
@@ -235,6 +236,6 @@ class DataAugmenter:
         save_as_ppm(file_path, augmented_image)
 
 
-da = DataAugmenter("dataset/GTSRB/training")
+da = DataAugmenter("dataset/GTSRB/train")
 da.load_images()
 da.augment_images()
