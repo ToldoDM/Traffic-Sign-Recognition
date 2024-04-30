@@ -9,6 +9,7 @@ dataset/
 /dataSources.local.xml
 requirements.txt
 .idea/
+runs/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
