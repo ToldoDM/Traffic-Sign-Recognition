@@ -48,9 +48,8 @@ class DataAugmenter:
         It appends each image along with its metadata (class and filename) to the dataset_images list.
         This method navigates through the structured folder as: 'original/$class_num$'.
         """
-        classes_folder_path = os.path.join(self.dataset_path, "original")
-        for class_folder in tqdm(os.listdir(classes_folder_path), desc='Loading classes'):
-            class_folder_path = os.path.join(classes_folder_path, class_folder)
+        for class_folder in tqdm(os.listdir(self.dataset_path), desc='Loading classes'):
+            class_folder_path = os.path.join(self.dataset_path, class_folder)
             for filename in os.listdir(class_folder_path):
                 file_path = os.path.join(class_folder_path, filename)
                 if filename.endswith('.ppm'):  # Filter by image file extensions
@@ -68,8 +67,7 @@ class DataAugmenter:
         self.dataset_images.sort(key=lambda x: (x[1]['class'], x[1]['filename']))
 
     def augment_images(self):
-        for sign_image, metadata in tqdm(self.dataset_images[0:200], desc='Augmenting images'):
-        #for sign_image, metadata in tqdm(self.dataset_images, desc='Augmenting images'):
+        for sign_image, metadata in tqdm(self.dataset_images, desc='Augmenting images'):
             metadata = dict(metadata)
             # Upscale image for future use
             transform_image = A.Compose([
@@ -225,6 +223,21 @@ class DataAugmenter:
                                          'iteration': index}
                 self._save_augmented_image(transformed['image'], dict(metadata))
 
+    def resize_images(self, height=224, width=224):
+        for sign_image, metadata in tqdm(self.dataset_images, desc='Resizing images'):
+            transform_image = A.Compose([
+                A.Resize(p=1.0, height=height, width=width, interpolation=1)
+            ])
+            resized_image = transform_image(image=sign_image)['image']
+            self._replace_with_resized_image(resized_image, metadata)
+
+    def _replace_with_resized_image(self, resized_image, metadata):
+        folder_path = self.dataset_path
+        folder_class_path = os.path.join(folder_path, metadata['class'])
+        file_path = os.path.join(folder_class_path, metadata['filename'] + '.ppm')
+        os.makedirs(os.path.dirname(file_path), exist_ok=True)
+        save_as_ppm(file_path, resized_image)
+
     def _save_augmented_image(self, augmented_image, augmented_metadata):
         folder_path = os.path.join(self.dataset_path, 'augmented')
         folder_class_path = os.path.join(folder_path, augmented_metadata['class'])
@@ -235,7 +248,6 @@ class DataAugmenter:
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
         save_as_ppm(file_path, augmented_image)
 
-
-da = DataAugmenter("dataset/GTSRB/train")
-da.load_images()
-da.augment_images()
+# da = DataAugmenter("dataset/GTSRB/train")
+# da.load_images()
+# da.augment_images()
