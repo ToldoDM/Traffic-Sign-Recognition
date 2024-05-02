@@ -9,7 +9,6 @@ dataset/
 /dataSources.local.xml
 requirements.txt
 .idea/
-runs/
 models/
 
 # Byte-compiled / optimized / DLL files
