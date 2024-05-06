@@ -77,7 +77,7 @@ def train_TSR(config):
     elif config['opt'] == 'adam':
         optimizer = optim.Adam(net.fc.parameters(), lr=config['lr'])
     elif config['opt'] == 'rmsprop':
-        optimizer = optim.Adam(net.fc.parameters(), lr=config['lr'])
+        optimizer = optim.RMSprop(net.fc.parameters(), lr=config['lr'])
     else:
         raise ValueError('Invalid optimizer provided')
 
@@ -236,7 +236,7 @@ if __name__ == "__main__":
         """
         config = {
             "lr": tune.loguniform(1e-4, 1e-2),
-            "opt": tune.grid_search(['sgd']),
+            "opt": tune.grid_search(['sgd', 'rmsprop']),
             "batch_size": tune.grid_search([64]),
             "neuron_layer_index": tune.grid_search([0, 2]),
             "dropout_values_index": tune.grid_search([0, 2]),
