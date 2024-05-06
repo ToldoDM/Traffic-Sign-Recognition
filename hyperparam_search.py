@@ -7,7 +7,7 @@ import torch.optim as optim
 from torch.utils.data import random_split
 import torchvision.models as models
 import torch.nn.functional as F
-from ray import tune
+from ray import tune, train
 from ray.tune.search.hyperopt import HyperOptSearch
 from ray.air.integrations.mlflow import MLflowLoggerCallback
 from hyperopt import hp
@@ -15,6 +15,10 @@ import mlflow
 from mlflow.tracking import MlflowClient
 from torchvision.models import ResNet50_Weights
 from torchvision import datasets
+from ray.train import Checkpoint, get_checkpoint
+import ray.cloudpickle as pickle
+from pathlib import Path
+import tempfile
 
 
 def create_dynamic_network(num_features, num_classes, neuron_list=None, dropout_values=None):
@@ -80,6 +84,18 @@ def train_TSR(config):
     else:
         raise ValueError('Invalid optimizer provided')
 
+    checkpoint = get_checkpoint()
+    if checkpoint:
+        with checkpoint.as_directory() as checkpoint_dir:
+            data_path = Path(checkpoint_dir) / "data.pkl"
+            with open(data_path, "rb") as fp:
+                checkpoint_state = pickle.load(fp)
+            start_epoch = checkpoint_state["epoch"]
+            net.load_state_dict(checkpoint_state["net_state_dict"])
+            optimizer.load_state_dict(checkpoint_state["optimizer_state_dict"])
+    else:
+        start_epoch = 0
+
     trainset, testset = load_data()
 
     test_abs = int(len(trainset) * 0.8)
@@ -100,7 +116,7 @@ def train_TSR(config):
         num_workers=4)
 
     epochs = 5
-    for epoch in range(epochs):  # loop over the dataset multiple times
+    for epoch in range(start_epoch, 10):  # loop over the dataset multiple times
         running_loss = 0.0
         epoch_steps = 0
         train_loss = 0.0
@@ -160,8 +176,20 @@ def train_TSR(config):
                 loss = criterion(outputs, labels)
                 val_loss += loss.cpu().numpy()
                 val_steps += 1
-        tune.report(train_loss=train_loss, train_accuracy=train_acc, val_loss=(val_loss / val_steps),
-                    val_accuracy=correct / total)
+
+        checkpoint_data = {
+            "epoch": epoch,
+            "net_state_dict": net.state_dict(),
+            "optimizer_state_dict": optimizer.state_dict(),
+        }
+        with tempfile.TemporaryDirectory() as checkpoint_dir:
+            data_path = Path(checkpoint_dir) / "data.pkl"
+            with open(data_path, "wb") as fp:
+                pickle.dump(checkpoint_data, fp)
+
+            checkpoint = Checkpoint.from_directory(checkpoint_dir)
+            train.report(dict(train_loss=train_loss, train_accuracy=train_acc, val_loss=(val_loss / val_steps),
+                              val_accuracy=correct / total), checkpoint=checkpoint)
 
     # test model on test set
     _, testset = load_data()
@@ -185,7 +213,7 @@ def train_TSR(config):
             correct += (predicted == labels).sum().item()
 
     test_accuracy = float(correct / total)
-    tune.report(test_accuracy=test_accuracy)
+    train.report(dict(test_accuracy=test_accuracy))
 
     print("Finished Training")
 
@@ -239,10 +267,10 @@ if __name__ == "__main__":
             "mlflow_experiment_id": experiment_id,
             "cwd": cwd,
             "lr": tune.loguniform(1e-5, 1e-1),
-            "opt": tune.grid_search(['sgd', 'adam', 'rmsprop']),
-            "batch_size": tune.choice([32, 64, 128, 256]),
-            "neuron_layer_index": tune.choice([0, 1, 2]),
-            "dropout_values_index": tune.choice([0, 1, 2]),
+            "opt": tune.grid_search(['sgd', 'adam']),
+            "batch_size": tune.grid_search([32, 64, 128, 256]),
+            "neuron_layer_index": tune.grid_search([0, 1, 2]),
+            "dropout_values_index": tune.grid_search([0, 1, 2]),
         }
         analysis = tune.run(
             train_TSR,
