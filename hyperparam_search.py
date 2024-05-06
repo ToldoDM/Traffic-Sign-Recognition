@@ -9,10 +9,7 @@ import torchvision.models as models
 import torch.nn.functional as F
 from ray import tune, train
 from ray.tune.search.hyperopt import HyperOptSearch
-from ray.air.integrations.mlflow import MLflowLoggerCallback
 from hyperopt import hp
-import mlflow
-from mlflow.tracking import MlflowClient
 from torchvision.models import ResNet50_Weights
 from torchvision import datasets
 from ray.train import Checkpoint, get_checkpoint
@@ -115,8 +112,8 @@ def train_TSR(config):
         shuffle=True,
         num_workers=4)
 
-    epochs = 5
-    for epoch in range(start_epoch, 10):  # loop over the dataset multiple times
+    epochs = 10
+    for epoch in range(start_epoch, epochs):  # loop over the dataset multiple times
         running_loss = 0.0
         epoch_steps = 0
         train_loss = 0.0
@@ -219,34 +216,8 @@ def train_TSR(config):
 
 
 if __name__ == "__main__":
-    # Initialize MLflow client
-    client = MlflowClient()
-
-    cwd = os.getcwd()
-
-    exp_base_name = sys.argv[1]
-
-    # Create new MLflow experiment with name specified in command line arg
-    # 5 max retries renaming exp name
-    created = 0
-    for i in range(100):
-        try:
-            exp_name = exp_base_name + "_{}".format(i)
-            experiment_id = client.create_experiment(exp_name)
-            created = 1
-            break
-        except (TypeError, mlflow.exceptions.MlflowException):
-            continue
-
-    if not created:
-        print("ERROR: Try new experiment name.")
-        sys.exit(1)
-
-    # Copy script to corresponding MLflow experiment dir
-    shutil.copyfile(__file__, 'mlruns/{}/{}'.format(experiment_id, "hyperparam_search.py"))
-
     # Run hyperparameter search, method used based on command line arg
-    if sys.argv[2] == 'basic_search':
+    if sys.argv[1] == 'basic_search':
         # "basic search": consists of grid search, random sampling, etc...
 
         """
@@ -264,31 +235,28 @@ if __name__ == "__main__":
         In the "loggers" argument, we specify that we want to log to MLflow.
         """
         config = {
-            "mlflow_experiment_id": experiment_id,
-            "cwd": cwd,
-            "lr": tune.loguniform(1e-5, 1e-1),
-            "opt": tune.grid_search(['sgd', 'adam']),
-            "batch_size": tune.grid_search([32, 64, 128, 256]),
-            "neuron_layer_index": tune.grid_search([0, 1, 2]),
-            "dropout_values_index": tune.grid_search([0, 1, 2]),
+            "lr": tune.loguniform(1e-4, 1e-2),
+            "opt": tune.grid_search(['sgd']),
+            "batch_size": tune.grid_search([64]),
+            "neuron_layer_index": tune.grid_search([0, 2]),
+            "dropout_values_index": tune.grid_search([0, 2]),
         }
         analysis = tune.run(
             train_TSR,
             config=config,
             resources_per_trial={"cpu": 4, "gpu": 1},
-            num_samples=1,
-            callbacks=[MLflowLoggerCallback(experiment_name=exp_name)],
+            num_samples=10
         )
-    elif sys.argv[2] == 'hyperopt_search':
+    elif sys.argv[1] == 'hyperopt_search':
         # "hyperopt search": is a more sophisticated method of hyperparameter optimization
         # More info here: https://github.com/hyperopt/hyperopt
         # Ray Tune provides support for several other popular hyperparameter optimization packages such as this one
 
         # Define the search space:
         space = {
-            'lr': hp.uniform('lr', 1e-5, 1e-1),
+            'lr': hp.loguniform('lr', 1e-5, 1e-1),
             'opt': hp.choice('opt', ['sgd', 'adam', 'rmsprop']),
-            'batch_size': hp.choice('batch_size', [32, 64, 128, 256]),
+            'batch_size': hp.choice('batch_size', [64, 128, 256]),
             'neuron_layer_index': hp.choice('neuron_layer_index', [0, 1, 2]),
             'dropout_values_index': hp.choice('dropout_values_index', [0, 1, 2]),
         }
@@ -323,11 +291,9 @@ if __name__ == "__main__":
         """
         analysis = tune.run(
             train_TSR,
-            config={"mlflow_experiment_id": experiment_id, "cwd": cwd},
             search_alg=algo,
             num_samples=10,
-            resources_per_trial={"cpu": 4, "gpu": 1},
-            callbacks=[MLflowLoggerCallback(experiment_name=exp_name)]
+            resources_per_trial={"cpu": 4, "gpu": 1}
         )
     else:
         print("ERROR: Invalid search type. Options: 'basic_search' or 'hyperopt_search'")
