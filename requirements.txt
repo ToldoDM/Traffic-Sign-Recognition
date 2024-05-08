@@ -6,5 +6,6 @@ opencv-python
 albumentations
 matplotlib
 ray
-mlflow
 hyperopt
+tqdm
+tensorboard
