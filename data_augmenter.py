@@ -73,175 +73,6 @@ class DataAugmenter:
                             print(f"Failed to load image: {file_path}")
                 self.dataset_images.sort(key=lambda x: (x[1]['class'], x[1]['filename']))
 
-    # def augment_images(self, num_of_total_images=0):
-    #     """
-    #     Augments images in the dataset to reach a specified total number of images per class.
-    #
-    #     Args:
-    #         num_of_total_images (int): The desired total number of images per class after augmentation.
-    #
-    #     Returns:
-    #         None
-    #
-    #     Side Effects:
-    #         - Augments images in the dataset to meet the desired total number per class.
-    #     """
-    #     for sign_image, metadata in tqdm(self.dataset_images, desc='Augmenting images'):
-    #         metadata = dict(metadata)
-    #         # Upscale image for future use
-    #         transform_image = A.Compose([
-    #             A.SmallestMaxSize(p=1.0, max_size=128, interpolation=1)
-    #         ])
-    #         resized_image = transform_image(image=sign_image)['image']
-    #         sign_img_height = np.shape(sign_image)[0]
-    #         sign_img_width = np.shape(sign_image)[1]
-    #
-    #         # Apply rain effect
-    #         # List of parameters
-    #         brightness_coefficients = [0.7, 0.5, 0.4, 0.3]
-    #         drop_width_values = [1, 2]
-    #         blur_values = [5, 7, 10]
-    #         rain_types = ['drizzle', 'heavy', 'torrential']
-    #         for i1, brightness_coefficient in enumerate(brightness_coefficients):
-    #             for i2, drop_width in enumerate(drop_width_values):
-    #                 for i3, blur_value in enumerate(blur_values):
-    #                     for i4, rain_type in enumerate(rain_types):
-    #                         transform_image = A.Compose([
-    #                             A.RandomRain(brightness_coefficient=brightness_coefficient,
-    #                                          drop_width=drop_width, blur_value=blur_value,
-    #                                          p=1, rain_type=rain_type),
-    #                             A.Resize(p=1.0, height=sign_img_width, width=sign_img_width, interpolation=1)
-    #                         ])
-    #                         transformed = transform_image(image=resized_image)
-    #                         metadata['transform'] = {
-    #                             'type': 'rain',
-    #                             'iteration':
-    #                                 ((len(drop_width_values) * len(rain_types) * len(blur_values) * i1) +
-    #                                  (len(rain_types) * len(blur_values) * i2) +
-    #                                  (len(rain_types) * i3) +
-    #                                  i4)}
-    #                         self._save_augmented_image(transformed['image'], dict(metadata))
-    #
-    #         # Spatter effect
-    #         spatter_modes = ['rain', 'rain', 'mud', 'mud', 'mud', 'mud']
-    #         for index, spatter_mode in enumerate(spatter_modes):
-    #             transform_image = A.Compose([
-    #                 A.Spatter(p=1.0, mode=spatter_mode)
-    #             ])
-    #             transformed = transform_image(image=sign_image)
-    #             metadata['transform'] = {'type': 'spatter',
-    #                                      'iteration': index}
-    #             self._save_augmented_image(transformed['image'], dict(metadata))
-    #
-    #         # Zoom Blur
-    #         transform_image = A.Compose([
-    #             A.ZoomBlur(p=1.0, max_factor=(1.4, 2), step_factor=(0.03, 0.03))
-    #         ])
-    #         transformed = transform_image(image=sign_image)
-    #         metadata['transform'] = {'type': 'zoom_blur',
-    #                                  'iteration': 0}
-    #         self._save_augmented_image(transformed['image'], dict(metadata))
-    #
-    #         # Random sun flare
-    #         srcs_radius = [30, 30, 40, 40, 50, 50, 60, 60]
-    #         for index, src_radius in enumerate(srcs_radius):
-    #             transform_image = A.Compose([
-    #                 A.RandomSunFlare(p=1.0, flare_roi=(0.3, 0.3, 0.7, 0.7), angle_lower=0, angle_upper=1,
-    #                                  num_flare_circles_lower=6,
-    #                                  num_flare_circles_upper=10, src_radius=src_radius, src_color=(255, 255, 255)),
-    #                 A.Resize(p=1.0, height=sign_img_width, width=sign_img_width, interpolation=1)
-    #             ])
-    #             transformed = transform_image(image=resized_image)
-    #             metadata['transform'] = {'type': 'sun_flare',
-    #                                      'iteration': index}
-    #             self._save_augmented_image(transformed['image'], dict(metadata))
-    #
-    #         # Ringing overshoot
-    #         blur_limits = [5, 7, 9, 11, 13, 15, 17, 19]
-    #         for index, blur_limit in enumerate(blur_limits):
-    #             transform_image = A.Compose([
-    #                 A.RingingOvershoot(p=1.0, blur_limit=(blur_limit, blur_limit), cutoff=(0.1, 0.2)),
-    #                 A.Resize(p=1.0, height=sign_img_width, width=sign_img_width, interpolation=1)
-    #             ])
-    #             transformed = transform_image(image=resized_image)
-    #             metadata['transform'] = {'type': 'ringing_overshoot',
-    #                                      'iteration': index}
-    #             self._save_augmented_image(transformed['image'], dict(metadata))
-    #
-    #         # Perspective
-    #         for index in range(4):
-    #             transform_image = A.Compose([
-    #                 A.Perspective(p=1.0, scale=(0.15, 0.2), keep_size=True, pad_mode=1, mask_pad_val=0,
-    #                               fit_output=False,
-    #                               interpolation=1)
-    #             ])
-    #             transformed = transform_image(image=sign_image)
-    #             metadata['transform'] = {'type': 'perspective',
-    #                                      'iteration': index}
-    #             self._save_augmented_image(transformed['image'], dict(metadata))
-    #
-    #         # Motion blur
-    #         blur_limits = [15, 21, 25, 31, 15, 21, 25, 31]
-    #         for index, blur_limit in enumerate(blur_limits):
-    #             transform_image = A.Compose([
-    #                 A.MotionBlur(p=1, blur_limit=(blur_limit, blur_limit), allow_shifted=False),
-    #                 A.Resize(p=1.0, height=sign_img_width, width=sign_img_width, interpolation=1)
-    #             ])
-    #             transformed = transform_image(image=resized_image)
-    #             metadata['transform'] = {'type': 'motion_blur',
-    #                                      'iteration': index}
-    #             self._save_augmented_image(transformed['image'], dict(metadata))
-    #
-    #         # Fog
-    #         gray_values = [240, 200, 150, 110]
-    #         for index, gray_value in enumerate(gray_values):
-    #             gray_image = np.full((np.shape(resized_image)[0], np.shape(resized_image)[1], 3), gray_value,
-    #                                  dtype=np.uint8)
-    #             transform_image = A.Compose([
-    #                 A.RandomFog(fog_coef_lower=0.2, fog_coef_upper=0.6, alpha_coef=0.2, p=1),
-    #                 A.GaussianBlur(blur_limits=(2, 15), p=1),
-    #                 A.TemplateTransform(p=1, templates=gray_image),
-    #                 A.ISONoise(intensity=(0.2, 0.5), p=1),
-    #                 A.Resize(p=1.0, height=sign_img_width, width=sign_img_width, interpolation=1)
-    #             ])
-    #             transformed = transform_image(image=resized_image)
-    #             metadata['transform'] = {'type': 'fog',
-    #                                      'iteration': index}
-    #             self._save_augmented_image(transformed['image'], dict(metadata))
-    #
-    #         # Noise
-    #         noise_values = [0.5, 1, 1.5, 2]
-    #         for index, noise_value in enumerate(noise_values):
-    #             transform_image = A.Compose([
-    #                 A.ISONoise(intensity=(noise_value, noise_value), p=1)
-    #             ])
-    #             transformed = transform_image(image=sign_image)
-    #             metadata['transform'] = {'type': 'ISO_noise',
-    #                                      'iteration': index}
-    #             self._save_augmented_image(transformed['image'], dict(metadata))
-    #
-    #         # Gamma values
-    #         gamma_values = [10, 25, 40, 60, 160, 250, 350, 510]
-    #         for index, gamma_value in enumerate(gamma_values):
-    #             transform_image = A.Compose([
-    #                 A.RandomGamma(gamma_limit=(gamma_value, gamma_value), p=1)
-    #             ])
-    #             transformed = transform_image(image=sign_image)
-    #             metadata['transform'] = {'type': 'gamma',
-    #                                      'iteration': index}
-    #             self._save_augmented_image(transformed['image'], dict(metadata))
-    #
-    #         # Shadow
-    #         for index in range(4):
-    #             transform_image = A.Compose([
-    #                 A.RandomShadow(shadow_roi=(0, 0, 1, 1), num_shadows_limit=(1, 2), num_shadows_lower=None,
-    #                                num_shadows_upper=None, shadow_dimension=5, always_apply=False, p=1)
-    #             ])
-    #             transformed = transform_image(image=sign_image)
-    #             metadata['transform'] = {'type': 'shadow',
-    #                                      'iteration': index}
-    #             self._save_augmented_image(transformed['image'], dict(metadata))
-
     def augment_images(self, num_of_total_images=0):
         """
         Augments images in the dataset to reach a specified total number of images per class.
@@ -258,7 +89,8 @@ class DataAugmenter:
         # Iterate over each class in the dataset
         for class_label in tqdm(self.classes, desc='Augmenting images'):
             # Filter images belonging to the current class
-            class_images = [(img, metadata) for img, metadata in self.dataset_images if metadata['class'] == class_label]
+            class_images = [(img, metadata) for img, metadata in self.dataset_images if
+                            metadata['class'] == class_label]
 
             # Calculate the number of images needed to reach the desired total
             num_existing_images = len(class_images)
@@ -280,178 +112,170 @@ class DataAugmenter:
             while num_images_to_augment > 0:
                 # Randomly select an augmentation option and image
                 selected_option = random.choice(augmentation_options)
-                selected_image_and_metadata = random.choice(class_images)
+                selected_image, metadata = random.choice(class_images)
+                metadata['iteration'] = num_images_to_augment
 
                 # Apply the selected augmentation option
-                augmented_image, augmented_metadata = self.apply_augmentation(selected_image_and_metadata, selected_option)
-
-                # Save the augmented image and update metadata
-                metadata = dict(class_images[0])
-                metadata['transform'] = {'type': selected_option, 'iteration': num_existing_images + 1}
-                self._save_augmented_image(augmented_image, metadata)
+                self.apply_augmentation(selected_image, selected_option, metadata)
 
                 # Decrement the number of images left to augment
                 num_images_to_augment -= 1
 
-    def apply_augmentation(self, selected_image_and_metadata, selected_option):
-        sign_image, metadata = selected_image_and_metadata
-        metadata = dict(metadata)
+    def apply_augmentation(self, sign_image, selected_option, metadata):
         # Upscale image for future use
         transform_image = A.Compose([
             A.SmallestMaxSize(p=1.0, max_size=128, interpolation=1)
         ])
         resized_image = transform_image(image=sign_image)['image']
+
+        if selected_option == 'rain':
+            self.apply_rain_effect(sign_image, resized_image, metadata)
+        elif selected_option == 'spatter':
+            self.apply_spatter_effect(sign_image, resized_image, metadata)
+        elif selected_option == 'zoom_blur':
+            self.apply_zoom_blur_effect(sign_image, resized_image, metadata)
+        elif selected_option == 'sun_flare':
+            self.apply_sun_flare_effect(sign_image, resized_image, metadata)
+        elif selected_option == 'ringing_overshoot':
+            self.apply_ringing_overshoot_effect(sign_image, resized_image, metadata)
+        elif selected_option == 'perspective':
+            self.apply_perspective_effect(sign_image, resized_image, metadata)
+        elif selected_option == 'motion_blur':
+            self.apply_motion_blur_effect(sign_image, resized_image, metadata)
+        elif selected_option == 'fog':
+            self.apply_fog_effect(sign_image, resized_image, metadata)
+        elif selected_option == 'ISO_noise':
+            self.apply_ISO_noise_effect(sign_image, resized_image, metadata)
+        elif selected_option == 'gamma':
+            self.apply_gamma_effect(sign_image, resized_image, metadata)
+        elif selected_option == 'shadow':
+            self.apply_shadow_effect(sign_image, resized_image, metadata)
+
+    def apply_rain_effect(self, sign_image, resized_image, metadata):
         sign_img_height = np.shape(sign_image)[0]
         sign_img_width = np.shape(sign_image)[1]
+        brightness_coefficient = random.choice([0.7, 0.5, 0.4, 0.3])
+        drop_width = random.choice([1, 2])
+        blur_value = random.choice([5, 7, 10])
+        rain_type = random.choice(['drizzle', 'heavy', 'torrential'])
+        transform_image = A.Compose([
+            A.RandomRain(brightness_coefficient=brightness_coefficient,
+                         drop_width=drop_width, blur_value=blur_value,
+                         p=1, rain_type=rain_type),
+            A.Resize(p=1.0, height=sign_img_height, width=sign_img_width, interpolation=1)
+        ])
+        transformed = transform_image(image=resized_image)
+        metadata['type'] = 'rain'
+        self._save_augmented_image(transformed['image'], metadata)
 
+    def apply_spatter_effect(self, sign_image, resized_image, metadata):
+        spatter_mode = random.choice(['rain', 'mud'])
+        transform_image = A.Compose([
+            A.Spatter(p=1.0, mode=spatter_mode)
+        ])
+        transformed = transform_image(image=sign_image)
+        metadata['type'] = 'spatter'
+        self._save_augmented_image(transformed['image'], metadata)
 
-
-        # Apply rain effect
-        # List of parameters
-        brightness_coefficients = [0.7, 0.5, 0.4, 0.3]
-        drop_width_values = [1, 2]
-        blur_values = [5, 7, 10]
-        rain_types = ['drizzle', 'heavy', 'torrential']
-        for i1, brightness_coefficient in enumerate(brightness_coefficients):
-            for i2, drop_width in enumerate(drop_width_values):
-                for i3, blur_value in enumerate(blur_values):
-                    for i4, rain_type in enumerate(rain_types):
-                        transform_image = A.Compose([
-                            A.RandomRain(brightness_coefficient=brightness_coefficient,
-                                         drop_width=drop_width, blur_value=blur_value,
-                                         p=1, rain_type=rain_type),
-                            A.Resize(p=1.0, height=sign_img_height, width=sign_img_width, interpolation=1)
-                        ])
-                        transformed = transform_image(image=resized_image)
-                        metadata['transform'] = {
-                            'type': 'rain',
-                            'iteration':
-                                ((len(drop_width_values) * len(rain_types) * len(blur_values) * i1) +
-                                 (len(rain_types) * len(blur_values) * i2) +
-                                 (len(rain_types) * i3) +
-                                 i4)}
-                        self._save_augmented_image(transformed['image'], dict(metadata))
-
-        # Spatter effect
-        spatter_modes = ['rain', 'rain', 'mud', 'mud', 'mud', 'mud']
-        for index, spatter_mode in enumerate(spatter_modes):
-            transform_image = A.Compose([
-                A.Spatter(p=1.0, mode=spatter_mode)
-            ])
-            transformed = transform_image(image=sign_image)
-            metadata['transform'] = {'type': 'spatter',
-                                     'iteration': index}
-            self._save_augmented_image(transformed['image'], dict(metadata))
-
-        # Zoom Blur
+    def apply_zoom_blur_effect(self, sign_image, resized_image, metadata):
         transform_image = A.Compose([
             A.ZoomBlur(p=1.0, max_factor=(1.4, 2), step_factor=(0.03, 0.03))
         ])
         transformed = transform_image(image=sign_image)
-        metadata['transform'] = {'type': 'zoom_blur',
-                                 'iteration': 0}
-        self._save_augmented_image(transformed['image'], dict(metadata))
+        metadata['type'] = 'zoom_blur'
+        self._save_augmented_image(transformed['image'], metadata)
 
-        # Random sun flare
-        srcs_radius = [30, 30, 40, 40, 50, 50, 60, 60]
-        for index, src_radius in enumerate(srcs_radius):
-            transform_image = A.Compose([
-                A.RandomSunFlare(p=1.0, flare_roi=(0.3, 0.3, 0.7, 0.7), angle_lower=0, angle_upper=1,
-                                 num_flare_circles_lower=6,
-                                 num_flare_circles_upper=10, src_radius=src_radius, src_color=(255, 255, 255)),
-                A.Resize(p=1.0, height=sign_img_width, width=sign_img_width, interpolation=1)
-            ])
-            transformed = transform_image(image=resized_image)
-            metadata['transform'] = {'type': 'sun_flare',
-                                     'iteration': index}
-            self._save_augmented_image(transformed['image'], dict(metadata))
+    def apply_sun_flare_effect(self, sign_image, resized_image, metadata):
+        sign_img_height = np.shape(sign_image)[0]
+        sign_img_width = np.shape(sign_image)[1]
+        src_radius = random.choice([30, 40, 50, 60])
+        transform_image = A.Compose([
+            A.RandomSunFlare(p=1.0, flare_roi=(0.3, 0.3, 0.7, 0.7), angle_lower=0, angle_upper=1,
+                             num_flare_circles_lower=6,
+                             num_flare_circles_upper=10, src_radius=src_radius, src_color=(255, 255, 255)),
+            A.Resize(p=1.0, height=sign_img_height, width=sign_img_width, interpolation=1)
+        ])
+        transformed = transform_image(image=resized_image)
+        metadata['type'] = 'sun_flare'
+        self._save_augmented_image(transformed['image'], metadata)
 
-        # Ringing overshoot
-        blur_limits = [5, 7, 9, 11, 13, 15, 17, 19]
-        for index, blur_limit in enumerate(blur_limits):
-            transform_image = A.Compose([
-                A.RingingOvershoot(p=1.0, blur_limit=(blur_limit, blur_limit), cutoff=(0.1, 0.2)),
-                A.Resize(p=1.0, height=sign_img_width, width=sign_img_width, interpolation=1)
-            ])
-            transformed = transform_image(image=resized_image)
-            metadata['transform'] = {'type': 'ringing_overshoot',
-                                     'iteration': index}
-            self._save_augmented_image(transformed['image'], dict(metadata))
+    def apply_ringing_overshoot_effect(self, sign_image, resized_image, metadata):
+        sign_img_height = np.shape(sign_image)[0]
+        sign_img_width = np.shape(sign_image)[1]
+        blur_limit = random.choice([5, 7, 9, 11, 13, 15, 17, 19])
+        transform_image = A.Compose([
+            A.RingingOvershoot(p=1.0, blur_limit=(blur_limit, blur_limit), cutoff=(0.1, 0.2)),
+            A.Resize(p=1.0, height=sign_img_height, width=sign_img_width, interpolation=1)
+        ])
+        transformed = transform_image(image=resized_image)
+        metadata['type'] = 'ringing_overshoot'
+        self._save_augmented_image(transformed['image'], metadata)
 
-        # Perspective
-        for index in range(4):
-            transform_image = A.Compose([
-                A.Perspective(p=1.0, scale=(0.15, 0.2), keep_size=True, pad_mode=1, mask_pad_val=0,
-                              fit_output=False,
-                              interpolation=1)
-            ])
-            transformed = transform_image(image=sign_image)
-            metadata['transform'] = {'type': 'perspective',
-                                     'iteration': index}
-            self._save_augmented_image(transformed['image'], dict(metadata))
+    def apply_perspective_effect(self, sign_image, resized_image, metadata):
+        transform_image = A.Compose([
+            A.Perspective(p=1.0, scale=(0.15, 0.2), keep_size=True, pad_mode=1, mask_pad_val=0,
+                          fit_output=False,
+                          interpolation=1)
+        ])
+        transformed = transform_image(image=sign_image)
+        metadata['type'] = 'perspective'
+        self._save_augmented_image(transformed['image'], metadata)
 
-        # Motion blur
-        blur_limits = [15, 21, 25, 31, 15, 21, 25, 31]
-        for index, blur_limit in enumerate(blur_limits):
-            transform_image = A.Compose([
-                A.MotionBlur(p=1, blur_limit=(blur_limit, blur_limit), allow_shifted=False),
-                A.Resize(p=1.0, height=sign_img_width, width=sign_img_width, interpolation=1)
-            ])
-            transformed = transform_image(image=resized_image)
-            metadata['transform'] = {'type': 'motion_blur',
-                                     'iteration': index}
-            self._save_augmented_image(transformed['image'], dict(metadata))
+    def apply_motion_blur_effect(self, sign_image, resized_image, metadata):
+        sign_img_height = np.shape(sign_image)[0]
+        sign_img_width = np.shape(sign_image)[1]
+        blur_limit = random.choice([15, 21, 25, 31])
+        transform_image = A.Compose([
+            A.MotionBlur(p=1, blur_limit=(blur_limit, blur_limit), allow_shifted=False),
+            A.Resize(p=1.0, height=sign_img_height, width=sign_img_width, interpolation=1)
+        ])
+        transformed = transform_image(image=resized_image)
+        metadata['type'] = 'motion_blur'
+        self._save_augmented_image(transformed['image'], metadata)
 
-        # Fog
-        gray_values = [240, 200, 150, 110]
-        for index, gray_value in enumerate(gray_values):
-            gray_image = np.full((np.shape(resized_image)[0], np.shape(resized_image)[1], 3), gray_value,
-                                 dtype=np.uint8)
-            transform_image = A.Compose([
-                A.RandomFog(fog_coef_lower=0.2, fog_coef_upper=0.6, alpha_coef=0.2, p=1),
-                A.GaussianBlur(blur_limits=(2, 15), p=1),
-                A.TemplateTransform(p=1, templates=gray_image),
-                A.ISONoise(intensity=(0.2, 0.5), p=1),
-                A.Resize(p=1.0, height=sign_img_width, width=sign_img_width, interpolation=1)
-            ])
-            transformed = transform_image(image=resized_image)
-            metadata['transform'] = {'type': 'fog',
-                                     'iteration': index}
-            self._save_augmented_image(transformed['image'], dict(metadata))
+    def apply_fog_effect(self, sign_image, resized_image, metadata):
+        sign_img_height = np.shape(sign_image)[0]
+        sign_img_width = np.shape(sign_image)[1]
+        gray_value = random.choice([240, 200, 150, 110])
+        gray_image = np.full((np.shape(resized_image)[0], np.shape(resized_image)[1], 3), gray_value,
+                             dtype=np.uint8)
+        transform_image = A.Compose([
+            A.RandomFog(fog_coef_lower=0.2, fog_coef_upper=0.6, alpha_coef=0.2, p=1),
+            A.GaussianBlur(blur_limits=(2, 15), p=1),
+            A.TemplateTransform(p=1, templates=gray_image),
+            A.ISONoise(intensity=(0.2, 0.5), p=1),
+            A.Resize(p=1.0, height=sign_img_height, width=sign_img_width, interpolation=1)
+        ])
+        transformed = transform_image(image=resized_image)
+        metadata['type'] = 'fog'
+        self._save_augmented_image(transformed['image'], metadata)
 
-        # Noise
-        noise_values = [0.5, 1, 1.5, 2]
-        for index, noise_value in enumerate(noise_values):
-            transform_image = A.Compose([
-                A.ISONoise(intensity=(noise_value, noise_value), p=1)
-            ])
-            transformed = transform_image(image=sign_image)
-            metadata['transform'] = {'type': 'ISO_noise',
-                                     'iteration': index}
-            self._save_augmented_image(transformed['image'], dict(metadata))
+    def apply_ISO_noise_effect(self, sign_image, resized_image, metadata):
+        noise_value = random.choice([0.5, 1, 1.5, 2])
+        transform_image = A.Compose([
+            A.ISONoise(intensity=(noise_value, noise_value), p=1)
+        ])
+        transformed = transform_image(image=sign_image)
+        metadata['type'] = 'ISO_noise'
+        self._save_augmented_image(transformed['image'], metadata)
 
-        # Gamma values
-        gamma_values = [10, 25, 40, 60, 160, 250, 350, 510]
-        for index, gamma_value in enumerate(gamma_values):
-            transform_image = A.Compose([
-                A.RandomGamma(gamma_limit=(gamma_value, gamma_value), p=1)
-            ])
-            transformed = transform_image(image=sign_image)
-            metadata['transform'] = {'type': 'gamma',
-                                     'iteration': index}
-            self._save_augmented_image(transformed['image'], dict(metadata))
+    def apply_gamma_effect(self, sign_image, resized_image, metadata):
+        gamma_value = random.choice([10, 25, 40, 60, 160, 250, 350, 510])
+        transform_image = A.Compose([
+            A.RandomGamma(gamma_limit=(gamma_value, gamma_value), p=1)
+        ])
+        transformed = transform_image(image=sign_image)
+        metadata['type'] = 'gamma'
+        self._save_augmented_image(transformed['image'], metadata)
 
-        # Shadow
-        for index in range(4):
-            transform_image = A.Compose([
-                A.RandomShadow(shadow_roi=(0, 0, 1, 1), num_shadows_limit=(1, 2), num_shadows_lower=None,
-                               num_shadows_upper=None, shadow_dimension=5, always_apply=False, p=1)
-            ])
-            transformed = transform_image(image=sign_image)
-            metadata['transform'] = {'type': 'shadow',
-                                     'iteration': index}
-            self._save_augmented_image(transformed['image'], dict(metadata))
-        return None, None
+    def apply_shadow_effect(self, sign_image, resized_image, metadata):
+        transform_image = A.Compose([
+            A.RandomShadow(shadow_roi=(0, 0, 1, 1), num_shadows_limit=(1, 2), num_shadows_lower=None,
+                           num_shadows_upper=None, shadow_dimension=5, always_apply=False, p=1)
+        ])
+        transformed = transform_image(image=sign_image)
+        metadata['type'] = 'shadow'
+        self._save_augmented_image(transformed['image'], metadata)
 
     def _save_augmented_image(self, augmented_image, augmented_metadata):
         """
@@ -475,6 +299,6 @@ class DataAugmenter:
         """
         folder_class_path = os.path.join(self.dataset_path, augmented_metadata['class'])
         file_path = os.path.join(folder_class_path,
-                                 augmented_metadata['filename'] + '_' + augmented_metadata['transform']['type'] + '_' +
-                                 str(augmented_metadata['transform']['iteration']) + '.ppm')
+                                 augmented_metadata['filename'] + '_' + augmented_metadata['type'] + '_' +
+                                 str(augmented_metadata['iteration']) + '.ppm')
         save_as_ppm(file_path, augmented_image)
