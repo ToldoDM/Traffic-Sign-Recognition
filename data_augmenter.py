@@ -38,22 +38,29 @@ class DataAugmenter:
 
         Args:
             dataset_path (str): The root path where the dataset is stored, expected to be in the format
-                                'folder/$class_num$'.
+                                'GTSRB/train/$class_num$', so the root dataset_path expected is 'GTSRB'.
         """
-        self.dataset_images = []
+        self.loaded_images = []
         self.dataset_path = dataset_path
+        self.folder_to_load_path = None
         self.classes = []
 
-    def load_images(self, classes_to_load=None):
+    def load_images(self, classes_to_load=None, folder_to_load='train'):
         """
         Loads '.ppm' images from a specified class subdirectory within the dataset path.
         It appends each image along with its metadata (class and filename) to the dataset_images list.
         This method navigates through the structured folder as: 'folder/$class_num$'.
+
+        Args:
+            classes_to_load (list): list of specific class names to load.
+            folder_to_load (str): the folder type to load. Accepted values are 'train' and 'test'.
         """
-        self.dataset_images = []
-        self.classes = classes_to_load if classes_to_load is not None else os.listdir(self.dataset_path)
-        for class_folder in tqdm(classes_to_load, desc='Loading classes'):
-            class_folder_path = os.path.join(self.dataset_path, class_folder)
+        self.loaded_images = []
+        self.folder_to_load_path = os.path.join(self.dataset_path, folder_to_load)
+        self.classes = classes_to_load if classes_to_load is not None else os.listdir(self.folder_to_load_path)
+        print("Classes found: ", *self.classes, sep=', ')
+        for class_folder in tqdm(self.classes, desc='Loading classes'):
+            class_folder_path = os.path.join(self.folder_to_load_path, class_folder)
             if not os.path.exists(class_folder_path):
                 print('Class folder {} does not exist.'.format(class_folder))
             else:
@@ -64,14 +71,14 @@ class DataAugmenter:
                         # OpenCV reads images in BGR format, convert it to RGB
                         img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
                         if img_rgb is not None:
-                            self.dataset_images.append(
+                            self.loaded_images.append(
                                 [img_rgb,
                                  {'class': class_folder,
                                   'filename': os.path.splitext(filename)[0]}
                                  ])
                         else:
                             print(f"Failed to load image: {file_path}")
-                self.dataset_images.sort(key=lambda x: (x[1]['class'], x[1]['filename']))
+                self.loaded_images.sort(key=lambda x: (x[1]['class'], x[1]['filename']))
 
     def augment_images(self, num_of_total_images=0):
         """
@@ -80,16 +87,13 @@ class DataAugmenter:
         Args:
             num_of_total_images (int): The desired total number of images per class after augmentation.
 
-        Returns:
-            None
-
         Side Effects:
             - Augments images in the dataset to meet the desired total number per class.
         """
         # Iterate over each class in the dataset
         for class_label in tqdm(self.classes, desc='Augmenting images'):
             # Filter images belonging to the current class
-            class_images = [(img, metadata) for img, metadata in self.dataset_images if
+            class_images = [(img, metadata) for img, metadata in self.loaded_images if
                             metadata['class'] == class_label]
 
             # Calculate the number of images needed to reach the desired total
@@ -241,7 +245,7 @@ class DataAugmenter:
                              dtype=np.uint8)
         transform_image = A.Compose([
             A.RandomFog(fog_coef_lower=0.2, fog_coef_upper=0.6, alpha_coef=0.2, p=1),
-            A.GaussianBlur(blur_limits=(2, 15), p=1),
+            A.GaussianBlur(blur_limit=(3, 15), p=1),
             A.TemplateTransform(p=1, templates=gray_image),
             A.ISONoise(intensity=(0.2, 0.5), p=1),
             A.Resize(p=1.0, height=sign_img_height, width=sign_img_width, interpolation=1)
@@ -286,9 +290,8 @@ class DataAugmenter:
             augmented_metadata (dict): Metadata associated with the augmented image. It should contain the following keys:
                 - 'class' (str): The class of the image.
                 - 'filename' (str): The filename of the image.
-                - 'transform' (dict): Transformation information including:
-                    - 'type' (str): Type of transformation applied.
-                    - 'iteration' (int): Iteration number of the transformation.
+                - 'type' (str): Type of transformation applied.
+                - 'iteration' (int): Iteration number of the transformation.
 
         Returns:
             None
@@ -297,8 +300,8 @@ class DataAugmenter:
             - Saves the augmented image to the dataset directory.
 
         """
-        folder_class_path = os.path.join(self.dataset_path, augmented_metadata['class'])
+        folder_class_path = os.path.join(self.folder_to_load_path, augmented_metadata['class'])
         file_path = os.path.join(folder_class_path,
-                                 augmented_metadata['filename'] + '_' + augmented_metadata['type'] + '_' +
-                                 str(augmented_metadata['iteration']) + '.ppm')
+                                 augmented_metadata['filename'] + '_' + augmented_metadata['type'] + '_' + str(
+                                     augmented_metadata['iteration']) + '.ppm')
         save_as_ppm(file_path, augmented_image)
