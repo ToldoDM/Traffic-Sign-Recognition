@@ -1,0 +1,11 @@
+torch
+torchvision
+torchaudio
+numpy
+opencv-python
+albumentations
+matplotlib
+ray
+hyperopt
+tqdm
+tensorboard
