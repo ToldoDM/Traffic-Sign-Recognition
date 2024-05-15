@@ -22,7 +22,6 @@ def save_as_ppm(file_path, image):
         # Write the image data
         f.write(image.tobytes())
 
-
 class DataAugmenter:
     """
     A class for loading and augmenting dataset images stored in a specific nested directory structure.
@@ -38,12 +37,13 @@ class DataAugmenter:
 
         Args:
             dataset_path (str): The root path where the dataset is stored, expected to be in the format
-                                'GTSRB/train/$class_num$', so the root dataset_path expected is 'GTSRB'.
+                                'GTSRB/merged/$class_num$', so the root dataset_path expected is 'GTSRB'.
         """
         self.loaded_images = []
         self.dataset_path = dataset_path
         self.folder_to_load_path = None
         self.classes = []
+        self.delete_source=False
 
     def load_images(self, classes_to_load=None, folder_to_load='train'):
         """
@@ -80,7 +80,34 @@ class DataAugmenter:
                             print(f"Failed to load image: {file_path}")
                 self.loaded_images.sort(key=lambda x: (x[1]['class'], x[1]['filename']))
 
-    def augment_images(self, num_of_total_images=0):
+    def add_weather_effects(self, prob_per_class=0):
+        """
+                Substitute an image with a weather augmented one following a specified probability over the class
+
+                Args:
+                    prob_per_class (int): The probability of the image being processed per class.
+
+                Side Effects:
+                    - Substitute an image with a weather augmented one.
+        """
+        for class_label in tqdm(self.classes, desc='Add weather effects with probability '+str(prob_per_class)):
+            # Filter images belonging to the current class
+            class_images = [(img, metadata) for img, metadata in self.loaded_images if
+                            metadata['class'] == class_label]
+
+            # Randomly choose weather augmentation options with equal probability
+            augmentation_options = [
+                'rain', 'spatter', 'sun_flare', 'fog', 'shadow'
+            ]
+
+            # Calculate the number of images needed to reach the desired total
+            for image,metadata in class_images:
+                selected_filter = random.choice(augmentation_options)
+                # Apply the augmentation with probability defined and delete the source image
+                if (random.random() < prob_per_class):
+                    self.apply_augmentation(image, selected_filter, metadata, delete_source=True)
+
+    def balance_samples_per_class(self, num_of_total_images=0):
         """
         Augments images in the dataset to reach a specified total number of images per class.
 
@@ -125,7 +152,9 @@ class DataAugmenter:
                 # Decrement the number of images left to augment
                 num_images_to_augment -= 1
 
-    def apply_augmentation(self, sign_image, selected_option, metadata):
+    def apply_augmentation(self, sign_image, selected_option, metadata, delete_source=False):
+        self.delete_source=delete_source
+
         # Upscale image for future use
         transform_image = A.Compose([
             A.SmallestMaxSize(p=1.0, max_size=128, interpolation=1)
@@ -170,7 +199,10 @@ class DataAugmenter:
         ])
         transformed = transform_image(image=resized_image)
         metadata['type'] = 'rain'
-        self._save_augmented_image(transformed['image'], metadata)
+        if self.delete_source:
+            self._save_augmented_image_overwriting(transformed['image'], metadata)
+        else:
+            self._save_augmented_image(transformed['image'], metadata)
 
     def apply_spatter_effect(self, sign_image, resized_image, metadata):
         spatter_mode = random.choice(['rain', 'mud'])
@@ -179,7 +211,10 @@ class DataAugmenter:
         ])
         transformed = transform_image(image=sign_image)
         metadata['type'] = 'spatter'
-        self._save_augmented_image(transformed['image'], metadata)
+        if self.delete_source:
+            self._save_augmented_image_overwriting(transformed['image'], metadata)
+        else:
+            self._save_augmented_image(transformed['image'], metadata)
 
     def apply_zoom_blur_effect(self, sign_image, resized_image, metadata):
         transform_image = A.Compose([
@@ -187,7 +222,10 @@ class DataAugmenter:
         ])
         transformed = transform_image(image=sign_image)
         metadata['type'] = 'zoom_blur'
-        self._save_augmented_image(transformed['image'], metadata)
+        if self.delete_source:
+            self._save_augmented_image_overwriting(transformed['image'], metadata)
+        else:
+            self._save_augmented_image(transformed['image'], metadata)
 
     def apply_sun_flare_effect(self, sign_image, resized_image, metadata):
         sign_img_height = np.shape(sign_image)[0]
@@ -201,7 +239,10 @@ class DataAugmenter:
         ])
         transformed = transform_image(image=resized_image)
         metadata['type'] = 'sun_flare'
-        self._save_augmented_image(transformed['image'], metadata)
+        if self.delete_source:
+            self._save_augmented_image_overwriting(transformed['image'], metadata)
+        else:
+            self._save_augmented_image(transformed['image'], metadata)
 
     def apply_ringing_overshoot_effect(self, sign_image, resized_image, metadata):
         sign_img_height = np.shape(sign_image)[0]
@@ -213,7 +254,10 @@ class DataAugmenter:
         ])
         transformed = transform_image(image=resized_image)
         metadata['type'] = 'ringing_overshoot'
-        self._save_augmented_image(transformed['image'], metadata)
+        if self.delete_source:
+            self._save_augmented_image_overwriting(transformed['image'], metadata)
+        else:
+            self._save_augmented_image(transformed['image'], metadata)
 
     def apply_perspective_effect(self, sign_image, resized_image, metadata):
         transform_image = A.Compose([
@@ -223,7 +267,10 @@ class DataAugmenter:
         ])
         transformed = transform_image(image=sign_image)
         metadata['type'] = 'perspective'
-        self._save_augmented_image(transformed['image'], metadata)
+        if self.delete_source:
+            self._save_augmented_image_overwriting(transformed['image'], metadata)
+        else:
+            self._save_augmented_image(transformed['image'], metadata)
 
     def apply_motion_blur_effect(self, sign_image, resized_image, metadata):
         sign_img_height = np.shape(sign_image)[0]
@@ -235,7 +282,10 @@ class DataAugmenter:
         ])
         transformed = transform_image(image=resized_image)
         metadata['type'] = 'motion_blur'
-        self._save_augmented_image(transformed['image'], metadata)
+        if self.delete_source:
+            self._save_augmented_image_overwriting(transformed['image'], metadata)
+        else:
+            self._save_augmented_image(transformed['image'], metadata)
 
     def apply_fog_effect(self, sign_image, resized_image, metadata):
         sign_img_height = np.shape(sign_image)[0]
@@ -252,7 +302,10 @@ class DataAugmenter:
         ])
         transformed = transform_image(image=resized_image)
         metadata['type'] = 'fog'
-        self._save_augmented_image(transformed['image'], metadata)
+        if self.delete_source:
+            self._save_augmented_image_overwriting(transformed['image'], metadata)
+        else:
+            self._save_augmented_image(transformed['image'], metadata)
 
     def apply_ISO_noise_effect(self, sign_image, resized_image, metadata):
         noise_value = random.choice([0.5, 1, 1.5, 2])
@@ -261,7 +314,10 @@ class DataAugmenter:
         ])
         transformed = transform_image(image=sign_image)
         metadata['type'] = 'ISO_noise'
-        self._save_augmented_image(transformed['image'], metadata)
+        if self.delete_source:
+            self._save_augmented_image_overwriting(transformed['image'], metadata)
+        else:
+            self._save_augmented_image(transformed['image'], metadata)
 
     def apply_gamma_effect(self, sign_image, resized_image, metadata):
         gamma_value = random.choice([10, 25, 40, 60, 160, 250, 350, 510])
@@ -270,7 +326,10 @@ class DataAugmenter:
         ])
         transformed = transform_image(image=sign_image)
         metadata['type'] = 'gamma'
-        self._save_augmented_image(transformed['image'], metadata)
+        if self.delete_source:
+            self._save_augmented_image_overwriting(transformed['image'], metadata)
+        else:
+            self._save_augmented_image(transformed['image'], metadata)
 
     def apply_shadow_effect(self, sign_image, resized_image, metadata):
         transform_image = A.Compose([
@@ -279,7 +338,10 @@ class DataAugmenter:
         ])
         transformed = transform_image(image=sign_image)
         metadata['type'] = 'shadow'
-        self._save_augmented_image(transformed['image'], metadata)
+        if self.delete_source:
+            self._save_augmented_image_overwriting(transformed['image'], metadata)
+        else:
+            self._save_augmented_image(transformed['image'], metadata)
 
     def _save_augmented_image(self, augmented_image, augmented_metadata):
         """
@@ -302,6 +364,31 @@ class DataAugmenter:
         """
         folder_class_path = os.path.join(self.folder_to_load_path, augmented_metadata['class'])
         file_path = os.path.join(folder_class_path,
-                                 augmented_metadata['filename'] + '_' + augmented_metadata['type'] + '_' + str(
-                                     augmented_metadata['iteration']) + '.ppm')
+                                 augmented_metadata['filename'] + '_' + augmented_metadata['transform']['type'] + '_' +
+                                 str(augmented_metadata['transform']['iteration']) + '.ppm')
         save_as_ppm(file_path, augmented_image)
+    def _save_augmented_image_overwriting(self, augmented_image, augmented_metadata):
+        """
+        Saves an augmented image along with its metadata to the dataset directory and delete the source image
+
+        Args:
+            augmented_image (numpy.ndarray): The augmented image to be saved.
+            augmented_metadata (dict): Metadata associated with the augmented image. It should contain the following keys:
+                - 'class' (str): The class of the image.
+                - 'filename' (str): The filename of the image.
+                - 'type' (str): Type of transformation applied.
+                - 'iteration' (int): Iteration number of the transformation.
+
+        Returns:
+            None
+
+        Side Effects:
+            - Saves the augmented image to the dataset directory and delete the source image
+
+        """
+        folder_class_path = os.path.join(self.folder_to_load_path, augmented_metadata['class'])
+        file_path = os.path.join(folder_class_path,
+                                 augmented_metadata['filename'] + '_' + augmented_metadata['type'] + '.ppm')
+        save_as_ppm(file_path, augmented_image)
+        os.remove(os.path.join(folder_class_path,augmented_metadata['filename']+'.ppm'))
+
