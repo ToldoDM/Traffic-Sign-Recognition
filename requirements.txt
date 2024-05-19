@@ -9,3 +9,4 @@ ray
 hyperopt
 tqdm
 tensorboard
+split-folders
