@@ -297,7 +297,6 @@ class DataAugmenter:
             A.RandomFog(fog_coef_lower=0.2, fog_coef_upper=0.6, alpha_coef=0.2, p=1),
             A.GaussianBlur(blur_limit=(3, 15), p=1),
             A.TemplateTransform(p=1, templates=gray_image),
-            A.ISONoise(intensity=(0.2, 0.5), p=1),
             A.Resize(p=1.0, height=sign_img_height, width=sign_img_width, interpolation=1)
         ])
         transformed = transform_image(image=resized_image)
