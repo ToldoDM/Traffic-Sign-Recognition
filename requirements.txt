@@ -10,3 +10,4 @@ hyperopt
 tqdm
 tensorboard
 split-folders
+pandas

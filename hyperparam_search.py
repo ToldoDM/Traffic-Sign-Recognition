@@ -219,7 +219,6 @@ if __name__ == "__main__":
     # Run hyperparameter search, method used based on command line arg
     if sys.argv[1] == 'basic_search':
         # "basic search": consists of grid search, random sampling, etc...
-
         """
         tune.run(...) will perform the hyperparameter sweep
         The first argument is a function that will:
@@ -227,12 +226,10 @@ if __name__ == "__main__":
             - define the model
             - train the model
             - log desired metrics
-        The config argument will define the search space. The "mlflow_experiment_id"
-        will allow params and metrics to be logged to the correct MLflow experiment.
+        The config argument will define the search space.
         In the "resources_per_trial" argument, we can specify how many CPUs and GPUs
         we want to provide to each training run within the experiment.
         The "num_samples" argument defines how many training runs will be performed.
-        In the "loggers" argument, we specify that we want to log to MLflow.
         """
         config = {
             "lr": tune.loguniform(1e-4, 1e-2),
@@ -247,54 +244,6 @@ if __name__ == "__main__":
             resources_per_trial={"cpu": 4, "gpu": 1},
             num_samples=10
         )
-    elif sys.argv[1] == 'hyperopt_search':
-        # "hyperopt search": is a more sophisticated method of hyperparameter optimization
-        # More info here: https://github.com/hyperopt/hyperopt
-        # Ray Tune provides support for several other popular hyperparameter optimization packages such as this one
-
-        # Define the search space:
-        space = {
-            'lr': hp.loguniform('lr', 1e-5, 1e-1),
-            'opt': hp.choice('opt', ['sgd', 'adam', 'rmsprop']),
-            'batch_size': hp.choice('batch_size', [64, 128, 256]),
-            'neuron_layer_index': hp.choice('neuron_layer_index', [0, 1, 2]),
-            'dropout_values_index': hp.choice('dropout_values_index', [0, 1, 2]),
-        }
-
-        # Set current best params which are used by hyperopt's algorithm
-        current_best_params = [{
-            'lr': 1e-3,
-            'opt': 'adam',
-            'batch_size': 64,
-            'neuron_layer_index': 0,
-            'dropout_values_index': 0,
-        }]
-
-        # Initialize the HyperOptSearch with our search space, target metric, current best params
-        # The "mode" argument specifies that we want to maximize this metric
-        algo = HyperOptSearch(space, metric="test_accuracy", mode="max", points_to_evaluate=current_best_params)
-
-        """
-        tune.run(...) will perform the hyperparameter sweep
-        The first argument is a function that will:
-            - load and preprocess training/validation data
-            - define the model
-            - train the model
-            - log desired metrics
-        In the "config" argument we specify the MLflow experiment id to log to
-        and the directory to save weights to.
-        Pass the HyperOptSearch as the "search_alg" argument.
-        In the "resources_per_trial" argument, we can specify how many CPUs and GPUs
-        we want to provide to each training run within the experiment.
-        The "num_samples" argument defines how many training runs will be performed.
-        In the "loggers" argument, we specify that we want to log to MLflow.
-        """
-        analysis = tune.run(
-            train_TSR,
-            search_alg=algo,
-            num_samples=10,
-            resources_per_trial={"cpu": 4, "gpu": 1}
-        )
     else:
-        print("ERROR: Invalid search type. Options: 'basic_search' or 'hyperopt_search'")
+        print("ERROR: Invalid search type. Options: 'basic_search'")
         sys.exit(1)
