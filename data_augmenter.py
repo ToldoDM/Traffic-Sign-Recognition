@@ -104,7 +104,7 @@ class DataAugmenter:
             for image,metadata in class_images:
                 selected_filter = random.choice(augmentation_options)
                 # Apply the augmentation with probability defined and delete the source image
-                if (random.random() < prob_per_class):
+                if random.random() < prob_per_class:
                     self.apply_augmentation(image, selected_filter, metadata, delete_source=True)
 
     def balance_samples_per_class(self, num_of_total_images=0):
