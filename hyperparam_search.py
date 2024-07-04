@@ -233,7 +233,7 @@ if __name__ == "__main__":
         """
         config = {
             "lr": tune.loguniform(1e-4, 1e-2),
-            "opt": tune.grid_search(['sgd', 'rmsprop']),
+            "opt": tune.grid_search(['sgd', 'rmsprop', 'adam']),
             "batch_size": tune.grid_search([64]),
             "neuron_layer_index": tune.grid_search([0, 2]),
             "dropout_values_index": tune.grid_search([0, 2]),
