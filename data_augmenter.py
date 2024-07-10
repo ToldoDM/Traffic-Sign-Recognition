@@ -107,51 +107,6 @@ class DataAugmenter:
                 if random.random() < prob_per_class:
                     self.apply_augmentation(image, selected_filter, metadata, delete_source=True)
 
-    def balance_samples_per_class(self, num_of_total_images=0):
-        """
-        Augments images in the dataset to reach a specified total number of images per class.
-
-        Args:
-            num_of_total_images (int): The desired total number of images per class after augmentation.
-
-        Side Effects:
-            - Augments images in the dataset to meet the desired total number per class.
-        """
-        # Iterate over each class in the dataset
-        for class_label in tqdm(self.classes, desc='Augmenting images'):
-            # Filter images belonging to the current class
-            class_images = [(img, metadata) for img, metadata in self.loaded_images if
-                            metadata['class'] == class_label]
-
-            # Calculate the number of images needed to reach the desired total
-            num_existing_images = len(class_images)
-            num_images_to_augment = num_of_total_images - num_existing_images
-
-            # If the desired total is already reached or exceeded, skip augmentation
-            if num_images_to_augment <= 0:
-                print(f'Class {class_label} already has {num_existing_images} '
-                      f'images that is higher than the requested total of {num_images_to_augment} images.')
-                continue
-
-            # Randomly choose augmentation options with equal probability
-            augmentation_options = [
-                'rain', 'spatter', 'zoom_blur', 'sun_flare', 'ringing_overshoot',
-                'perspective', 'motion_blur', 'fog', 'ISO_noise', 'gamma', 'shadow'
-            ]
-
-            # Iterate until the desired number of images is augmented for the class
-            while num_images_to_augment > 0:
-                # Randomly select an augmentation option and image
-                selected_option = random.choice(augmentation_options)
-                selected_image, metadata = random.choice(class_images)
-                metadata['iteration'] = num_images_to_augment
-
-                # Apply the selected augmentation option
-                self.apply_augmentation(selected_image, selected_option, metadata)
-
-                # Decrement the number of images left to augment
-                num_images_to_augment -= 1
-
     def apply_augmentation(self, sign_image, selected_option, metadata, delete_source=False):
         self.delete_source=delete_source
 
